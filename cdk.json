@@ -112,7 +112,7 @@
       "goAppBranchName": "staging"
     },
     "prod": {
-      "goAppBranchName": "master"
+      "goAppBranchName": "optional-1"
     }
   }
 }

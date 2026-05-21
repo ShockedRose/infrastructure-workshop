@@ -8,6 +8,7 @@ import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
 import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
 import { createGoAppRepositories } from "./registry/go-app-repositories";
 import { createGoAppArtifactBucket } from "./storage/go-app-artifact-bucket";
+import { createGoAppFrontendBucket } from "./storage/go-app-frontend-bucket";
 
 interface InfrastructureWorkshopStackProps extends StackProps {
   DEPLOY_ENVIRONMENT: string;
@@ -26,20 +27,33 @@ export class InfrastructureWorkshopStack extends Stack {
       goAppRepoName,
       goAppBranchName,
     } = props;
+
+
     const account = Stack.of(this).account;
 
     const bedrockImageApi = createBedrockImageApi(this, DEPLOY_ENVIRONMENT);
+
+
     const goAppArtifactBucket = createGoAppArtifactBucket(
       this,
       DEPLOY_ENVIRONMENT
     );
+    const goAppFrontendBucket = createGoAppFrontendBucket(
+      this,
+      DEPLOY_ENVIRONMENT
+    );
     const repositories = createGoAppRepositories(this, DEPLOY_ENVIRONMENT);
+
     const goCdRole = createGoAppCdRole(this, {
       deployEnvironment: DEPLOY_ENVIRONMENT,
       account,
       goAppArtifactBucket,
+      goAppFrontendBucket,
     });
+
     const network = createGoAppNetwork(this);
+
+
     const compute = createGoAppCompute(this, {
       deployEnvironment: DEPLOY_ENVIRONMENT,
       vpc: network.vpc,
@@ -47,6 +61,8 @@ export class InfrastructureWorkshopStack extends Stack {
       goAppEcrRepo: repositories.goAppEcrRepo,
       goCdRole,
     });
+
+
     const buildProjects = createGoAppBuildProjects(this, {
       deployEnvironment: DEPLOY_ENVIRONMENT,
       goCdRole,
@@ -63,7 +79,9 @@ export class InfrastructureWorkshopStack extends Stack {
       goAppServiceName: compute.goAppServiceName,
       taskFamily: compute.taskFamily,
       bedrockGenerateImageUrl: bedrockImageApi.generateImageUrl,
+      goAppFrontendBucket,
     });
+
 
     createGoAppCdPipeline(this, {
       deployEnvironment: DEPLOY_ENVIRONMENT,
@@ -75,6 +93,7 @@ export class InfrastructureWorkshopStack extends Stack {
       goAppDockerProject: buildProjects.goAppDockerProject,
       ensureEcsServiceProject: buildProjects.ensureEcsServiceProject,
     });
+
 
     new CfnOutput(this, "GoAppWebServerURL", {
       value: `http://${compute.alb.loadBalancerDnsName}`,
@@ -90,6 +109,19 @@ export class InfrastructureWorkshopStack extends Stack {
     new CfnOutput(this, "GoAppServiceName", {
       value: compute.goAppServiceName,
       exportName: `${DEPLOY_ENVIRONMENT}-GoApp-Service-Name`,
+    });
+
+
+    new CfnOutput(this, "GoAppFrontendBucketName", {
+      value: goAppFrontendBucket.bucketName,
+      description: "S3 bucket for the cookie-image-bakery static frontend",
+      exportName: `${DEPLOY_ENVIRONMENT}-GoApp-Frontend-Bucket-Name`,
+    });
+
+    new CfnOutput(this, "GoAppFrontendWebsiteUrl", {
+      value: goAppFrontendBucket.bucketWebsiteUrl,
+      description: "Public S3 website URL for the cookie-image-bakery frontend",
+      exportName: `${DEPLOY_ENVIRONMENT}-GoApp-Frontend-Website-URL`,
     });
 
   }

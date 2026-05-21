@@ -12,6 +12,7 @@ import { Role } from "aws-cdk-lib/aws-iam";
 import { LogGroup } from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 import { CONTAINER_NAME, CONTAINER_PORT } from "../shared/constants";
+import { Bucket } from "aws-cdk-lib/aws-s3";
 
 export interface GoAppBuildProjectsProps {
   readonly deployEnvironment: string;
@@ -29,6 +30,7 @@ export interface GoAppBuildProjectsProps {
   readonly goAppServiceName: string;
   readonly taskFamily: string;
   readonly bedrockGenerateImageUrl: string;
+  readonly goAppFrontendBucket: Bucket;
 }
 
 export interface GoAppBuildProjects {
@@ -57,6 +59,7 @@ export function createGoAppBuildProjects(
     goAppServiceName,
     taskFamily,
     bedrockGenerateImageUrl,
+    goAppFrontendBucket,
   } = props;
 
   const goAppDockerProject = new PipelineProject(scope, "GoAppDockerBuildProject", {
@@ -111,7 +114,7 @@ export function createGoAppBuildProjects(
         },
       },
       artifacts: {
-        files: ["imagedefinitions.json", "cdk/**/*"],
+        files: ["imagedefinitions.json", "cdk/**/*", "frontend/**/*"],
       },
     }),
   });
@@ -148,6 +151,7 @@ export function createGoAppBuildProjects(
         },
         DEPLOY_ENVIRONMENT: { value: deployEnvironment },
         ECS_STACK_NAME: { value: `${deployEnvironment}-goapp-ecs-app` },
+        FRONTEND_BUCKET_NAME: { value: goAppFrontendBucket.bucketName },
       },
       buildSpec: BuildSpec.fromObject({
         version: "0.2",

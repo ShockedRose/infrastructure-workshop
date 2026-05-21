@@ -14,6 +14,7 @@ export interface GoAppCdRoleProps {
   readonly deployEnvironment: string;
   readonly account: string;
   readonly goAppArtifactBucket: Bucket;
+  readonly goAppFrontendBucket: Bucket;
 }
 
 export function createGoAppCdRole(
@@ -21,7 +22,7 @@ export function createGoAppCdRole(
   props: GoAppCdRoleProps
 ): Role {
   const stack = Stack.of(scope);
-  const { deployEnvironment, account, goAppArtifactBucket } = props;
+  const { deployEnvironment, account, goAppArtifactBucket, goAppFrontendBucket } = props;
 
   return new Role(scope, "GoAppCdRole", {
     assumedBy: new CompositePrincipal(
@@ -38,6 +39,21 @@ export function createGoAppCdRole(
             resources: [
               goAppArtifactBucket.bucketArn,
               `${goAppArtifactBucket.bucketArn}/*`,
+            ],
+          }),
+          new PolicyStatement({
+            sid: "FrontendBucketDeploy",
+            effect: Effect.ALLOW,
+            actions: [
+              "s3:GetObject*",
+              "s3:GetBucket*",
+              "s3:List*",
+              "s3:PutObject*",
+              "s3:DeleteObject*",
+            ],
+            resources: [
+              goAppFrontendBucket.bucketArn,
+              `${goAppFrontendBucket.bucketArn}/*`,
             ],
           }),
           new PolicyStatement({
