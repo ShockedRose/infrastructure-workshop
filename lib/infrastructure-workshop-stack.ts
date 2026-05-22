@@ -2,7 +2,7 @@ import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 // import { createBedrockImageApi } from "./api/bedrock-image-api";
 // import { createGoAppCompute } from "./compute/go-app-compute";
-// import { createGoAppCdRole } from "./identity/go-app-cd-role";
+import { createGoAppCdRole } from "./identity/go-app-cd-role";
 // import { createGoAppNetwork } from "./networking/go-app-network";
 // import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
 // import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
@@ -27,12 +27,17 @@ export class InfrastructureWorkshopStack extends Stack {
       // goAppBranchName,
     } = props;
 
-    // const account = Stack.of(this).account;
+    const account = Stack.of(this).account;
 
     const goAppArtifactBucket = createGoAppArtifactBucket(
       this,
       DEPLOY_ENVIRONMENT
     );
 
+    const goCdRole = createGoAppCdRole(this, {
+      deployEnvironment: DEPLOY_ENVIRONMENT,
+      account,
+      goAppArtifactBucket,
+    });
   }
 }
