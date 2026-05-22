@@ -1,6 +1,6 @@
 import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
-// import { createBedrockImageApi } from "./api/bedrock-image-api";
+import { createBedrockImageApi } from "./api/bedrock-image-api";
 // import { createGoAppCompute } from "./compute/go-app-compute";
 import { createGoAppCdRole } from "./identity/go-app-cd-role";
 // import { createGoAppNetwork } from "./networking/go-app-network";
@@ -29,6 +29,7 @@ export class InfrastructureWorkshopStack extends Stack {
 
     const account = Stack.of(this).account;
 
+    const bedrockImageApi = createBedrockImageApi(this, DEPLOY_ENVIRONMENT);
     const goAppArtifactBucket = createGoAppArtifactBucket(
       this,
       DEPLOY_ENVIRONMENT
