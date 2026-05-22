@@ -1,7 +1,7 @@
 import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { createBedrockImageApi } from "./api/bedrock-image-api";
-// import { createGoAppCompute } from "./compute/go-app-compute";
+import { createGoAppCompute } from "./compute/go-app-compute";
 import { createGoAppCdRole } from "./identity/go-app-cd-role";
 import { createGoAppNetwork } from "./networking/go-app-network";
 // import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
@@ -35,7 +35,7 @@ export class InfrastructureWorkshopStack extends Stack {
       DEPLOY_ENVIRONMENT
     );
 
-    
+
     const repositories = createGoAppRepositories(this, DEPLOY_ENVIRONMENT);
 
 
@@ -46,5 +46,33 @@ export class InfrastructureWorkshopStack extends Stack {
     });
 
     const network = createGoAppNetwork(this);
+
+    const compute = createGoAppCompute(this, {
+      deployEnvironment: DEPLOY_ENVIRONMENT,
+      vpc: network.vpc,
+      albSecurityGroup: network.albSecurityGroup,
+      goAppEcrRepo: repositories.goAppEcrRepo,
+      goCdRole,
+    });
+
+
+
+
+
+    new CfnOutput(this, "GoAppWebServerURL", {
+      value: `http://${compute.alb.loadBalancerDnsName}`,
+      description: "URL of the Go web server served by the ECS Fargate service",
+      exportName: `${DEPLOY_ENVIRONMENT}-GoApp-WebServer-URL`,
+    });
+
+    new CfnOutput(this, "GoAppClusterName", {
+      value: compute.cluster.clusterName,
+      exportName: `${DEPLOY_ENVIRONMENT}-GoApp-Cluster-Name`,
+    });
+
+    new CfnOutput(this, "GoAppServiceName", {
+      value: compute.goAppServiceName,
+      exportName: `${DEPLOY_ENVIRONMENT}-GoApp-Service-Name`,
+    });
   }
 }
