@@ -102,6 +102,17 @@
     "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
     "@aws-cdk/custom-resources:logApiResponseDataPropertyTrueDefault": false,
     "@aws-cdk/customresources:installLatestAwsSdkDefault": false,
-    "@aws-cdk/s3-notifications:addS3TrustKeyPolicyForSnsSubscriptions": true
+    "@aws-cdk/s3-notifications:addS3TrustKeyPolicyForSnsSubscriptions": true,
+    "goAppRepoName": "GO_APP_REPO_NAME",
+    "repositoryOwner": "YOUR_GITHUB_USERNAME",
+    "dev": {
+      "goAppBranchName": "dev"
+    },
+    "staging": {
+      "goAppBranchName": "staging"
+    },
+    "prod": {
+      "goAppBranchName": "master"
+    }
   }
 }

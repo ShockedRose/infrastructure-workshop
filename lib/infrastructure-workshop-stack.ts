@@ -1,16 +1,38 @@
-import * as cdk from 'aws-cdk-lib/core';
-import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import { CfnOutput, Stack, StackProps } from "aws-cdk-lib";
+import { Construct } from "constructs";
+// import { createBedrockImageApi } from "./api/bedrock-image-api";
+// import { createGoAppCompute } from "./compute/go-app-compute";
+// import { createGoAppCdRole } from "./identity/go-app-cd-role";
+// import { createGoAppNetwork } from "./networking/go-app-network";
+// import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
+// import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
+// import { createGoAppRepositories } from "./registry/go-app-repositories";
+import { createGoAppArtifactBucket } from "./storage/go-app-artifact-bucket";
 
-export class InfrastructureWorkshopStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+interface InfrastructureWorkshopStackProps extends StackProps {
+  DEPLOY_ENVIRONMENT: string;
+  repositoryOwner: string;
+  goAppRepoName: string;
+  goAppBranchName: string;
+}
+
+export class InfrastructureWorkshopStack extends Stack {
+  constructor(scope: Construct, id: string, props: InfrastructureWorkshopStackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const {
+      DEPLOY_ENVIRONMENT,
+      // repositoryOwner,
+      // goAppRepoName,
+      // goAppBranchName,
+    } = props;
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'InfrastructureWorkshopQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    // const account = Stack.of(this).account;
+
+    const goAppArtifactBucket = createGoAppArtifactBucket(
+      this,
+      DEPLOY_ENVIRONMENT
+    );
+
   }
 }

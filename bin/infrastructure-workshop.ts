@@ -1,20 +1,61 @@
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib/core';
+import { App } from "aws-cdk-lib";
 import { InfrastructureWorkshopStack } from '../lib/infrastructure-workshop-stack';
 
-const app = new cdk.App();
-new InfrastructureWorkshopStack(app, 'InfrastructureWorkshopStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
+const app = new App();
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+const deployEnvironment =
+  process.env.DEPLOY_ENVIRONMENT || app.node.tryGetContext("env");
+if (!deployEnvironment) {
+  throw new Error(
+    "Set DEPLOY_ENVIRONMENT when deploying (via CI CodeBuild). For local synth/testing use: `cdk deploy --context env=dev/staging/prod` with DEPLOY_ENVIRONMENT set to the same."
+  );
+}
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+const contextEnv =
+  app.node.tryGetContext(deployEnvironment) as { goAppBranchName?: string } | undefined;
+
+const repositoryOwner = app.node.tryGetContext("repositoryOwner");
+const goAppRepoName = app.node.tryGetContext("goAppRepoName");
+const goAppBranchName =
+  contextEnv?.goAppBranchName || app.node.tryGetContext("goAppBranchName");
+
+const account =
+  process.env.AWS_ACCOUNT_ID || process.env.CDK_DEFAULT_ACCOUNT || app.node.tryGetContext("account");
+const region =
+  process.env.AWS_REGION ||
+  process.env.CDK_DEFAULT_REGION ||
+  app.node.tryGetContext("region") ||
+  "us-east-1";
+
+if (!repositoryOwner || typeof repositoryOwner !== "string") {
+  throw new Error(
+    '`repositoryOwner` is required in infrastructure/cdk.json "context"'
+  );
+}
+if (!goAppRepoName || typeof goAppRepoName !== "string") {
+  throw new Error(
+    '`goAppRepoName` is required in infrastructure/cdk.json "context"'
+  );
+}
+if (!goAppBranchName || typeof goAppBranchName !== "string") {
+  throw new Error(
+    `Missing goAppBranchName for '${deployEnvironment}': define it under infrastructure/cdk.json "context"."${deployEnvironment}".goAppBranchName`
+  );
+}
+if (!account || typeof account !== "string") {
+  throw new Error(
+    "AWS account not set for deployment (AWS_ACCOUNT_ID or CDK_DEFAULT_ACCOUNT)."
+  );
+}
+
+
+new InfrastructureWorkshopStack(app, `${deployEnvironment}-Infrastructure-Stack`, {
+  DEPLOY_ENVIRONMENT: deployEnvironment,
+  repositoryOwner,
+  goAppRepoName,
+  goAppBranchName,
+  env: { account, region },
+  description: `Stack for the ${deployEnvironment} infrastructure (VPC, ECS, Bedrock proxy API, Go app CI/CD pipeline) deployed via CDK.`,
 });
