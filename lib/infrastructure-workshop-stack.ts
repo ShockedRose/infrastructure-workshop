@@ -4,8 +4,8 @@ import { createBedrockImageApi } from "./api/bedrock-image-api";
 import { createGoAppCompute } from "./compute/go-app-compute";
 import { createGoAppCdRole } from "./identity/go-app-cd-role";
 import { createGoAppNetwork } from "./networking/go-app-network";
-// import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
-// import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
+import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
+import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
 import { createGoAppRepositories } from "./registry/go-app-repositories";
 import { createGoAppArtifactBucket } from "./storage/go-app-artifact-bucket";
 
@@ -22,9 +22,9 @@ export class InfrastructureWorkshopStack extends Stack {
 
     const {
       DEPLOY_ENVIRONMENT,
-      // repositoryOwner,
-      // goAppRepoName,
-      // goAppBranchName,
+      repositoryOwner,
+      goAppRepoName,
+      goAppBranchName,
     } = props;
 
     const account = Stack.of(this).account;
@@ -56,8 +56,35 @@ export class InfrastructureWorkshopStack extends Stack {
     });
 
 
+    const buildProjects = createGoAppBuildProjects(this, {
+      deployEnvironment: DEPLOY_ENVIRONMENT,
+      goCdRole,
+      goAppEcrRepo: repositories.goAppEcrRepo,
+      goBaseGolangEcrRepo: repositories.goBaseGolangEcrRepo,
+      goBaseAlpineEcrRepo: repositories.goBaseAlpineEcrRepo,
+      cluster: compute.cluster,
+      vpc: network.vpc,
+      serviceSecurityGroup: network.serviceSecurityGroup,
+      targetGroup: compute.targetGroup,
+      ecsTaskExecutionRole: compute.ecsTaskExecutionRole,
+      ecsTaskRole: compute.ecsTaskRole,
+      logGroup: compute.logGroup,
+      goAppServiceName: compute.goAppServiceName,
+      taskFamily: compute.taskFamily,
+      bedrockGenerateImageUrl: bedrockImageApi.generateImageUrl,
+    });
 
 
+    createGoAppCdPipeline(this, {
+      deployEnvironment: DEPLOY_ENVIRONMENT,
+      repositoryOwner,
+      goAppRepoName,
+      goAppBranchName,
+      goCdRole,
+      goAppArtifactBucket,
+      goAppDockerProject: buildProjects.goAppDockerProject,
+      ensureEcsServiceProject: buildProjects.ensureEcsServiceProject,
+    });
 
     new CfnOutput(this, "GoAppWebServerURL", {
       value: `http://${compute.alb.loadBalancerDnsName}`,
