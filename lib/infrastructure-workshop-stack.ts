@@ -3,10 +3,10 @@ import { Construct } from "constructs";
 import { createBedrockImageApi } from "./api/bedrock-image-api";
 // import { createGoAppCompute } from "./compute/go-app-compute";
 import { createGoAppCdRole } from "./identity/go-app-cd-role";
-// import { createGoAppNetwork } from "./networking/go-app-network";
+import { createGoAppNetwork } from "./networking/go-app-network";
 // import { createGoAppBuildProjects } from "./pipeline/go-app-build-projects";
 // import { createGoAppCdPipeline } from "./pipeline/go-app-cd-pipeline";
-// import { createGoAppRepositories } from "./registry/go-app-repositories";
+import { createGoAppRepositories } from "./registry/go-app-repositories";
 import { createGoAppArtifactBucket } from "./storage/go-app-artifact-bucket";
 
 interface InfrastructureWorkshopStackProps extends StackProps {
@@ -35,10 +35,16 @@ export class InfrastructureWorkshopStack extends Stack {
       DEPLOY_ENVIRONMENT
     );
 
+    
+    const repositories = createGoAppRepositories(this, DEPLOY_ENVIRONMENT);
+
+
     const goCdRole = createGoAppCdRole(this, {
       deployEnvironment: DEPLOY_ENVIRONMENT,
       account,
       goAppArtifactBucket,
     });
+
+    const network = createGoAppNetwork(this);
   }
 }
